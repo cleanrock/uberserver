@@ -1,4 +1,5 @@
 import time
+import copy
 
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, ForeignKey, Boolean, Text
 from sqlalchemy.orm import mapper, sessionmaker, relation
@@ -195,7 +196,7 @@ class UsersHandler:
 	def __init__(self, root, engine):
 		self._root = root
 		metadata.create_all(engine)
-		self.sessionmaker = sessionmaker(bind=engine, autoflush=True, transactional=True)
+		self.sessionmaker = sessionmaker(bind=engine, autoflush=True)
 	
 	def clientFromID(self, db_id):
 		session = self.sessionmaker()
@@ -232,7 +233,7 @@ class UsersHandler:
 		good = True
 		now = int(time.time()*1000)
 		entry = session.query(User).filter(User.lowername==name).first() # should only ever be one user with each name so we can just grab the first one :)
-		reason = entry
+		reason = copy.deepcopy(entry) # if not copying returned reason(entry) is not valid after close below
 		if not entry:
 			return False, 'No user named %s'%user
 		if not password == entry.password:
@@ -279,7 +280,7 @@ class UsersHandler:
 				entry = User(name, lanadmin['username'], password, ip, 'admin')
 				now = time.time()
 				entry.logins.append(Login(now, ip, None, None, None, None, country))
-				session.save(entry)
+				session.add(entry)
 				session.commit()
 				session.close()
 				return True, 'Account registered successfully.'
@@ -287,7 +288,7 @@ class UsersHandler:
 		if results:
 			return False, 'Username already exists.'
 		entry = User(name, user, password, ip)
-		session.save(entry)
+		session.add(entry)
 		session.commit()
 		session.close()
 		return True, 'Account registered successfully.'
@@ -299,7 +300,7 @@ class UsersHandler:
 		entry = session.query(User).filter(User.lowername==name).first()
 		end_time = int(time.time()*1000) + int(duration*24*60*60*1000)
 		ban = Ban(reason, end_time)
-		session.save(ban)
+		session.add(ban)
 		ban.entries.append(AggregateBan('user', name))
 		ban.entries.append(AggregateBan('ip', entry.last_ip))
 		ban.entries.append(AggregateBan('userid', entry.last_id))
@@ -325,7 +326,7 @@ class UsersHandler:
 		session = self.sessionmaker()
 		end_time = int(time.time()*1000) + int(duration*24*60*60*1000)
 		ban = Ban(reason, end_time)
-		session.save(ban)
+		session.add(ban)
 		ban.entries.append(AggregateBan('ip'), ip)
 		session.commit()
 		session.close()
@@ -492,7 +493,7 @@ class UsersHandler:
 		entry.autokick = channel.autokick
 		entry.censor = channel.censor
 		entry.antishock = channel.antishock
-		session.save(entry)
+		session.add(entry)
 		session.commit()
 		session.close()
 
@@ -522,6 +523,6 @@ class UsersHandler:
 				session = self.sessionmaker()
 			entry = self.inject_user(user['user'], user['pass'], user['last_ip'], user['last_login'], user['register_date'],
 												user['uid'], user['ingame'], user['country'], user['bot'], user['access'])
-			session.save(entry)
+			session.add(entry)
 		session.commit()
 		session.close()

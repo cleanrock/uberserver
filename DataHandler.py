@@ -233,7 +233,7 @@ class DataHandler:
 			else:
 				try:
 					sqlalchemy = __import__('sqlalchemy')
-					self.engine = sqlalchemy.create_engine(self.sqlurl, pool_size=self.max_threads*2, pool_recycle=300) # hopefully no thread will open more than two sql connections :/
+					self.engine = sqlalchemy.create_engine(self.sqlurl, pool_recycle=300) # hopefully no thread will open more than two sql connections :/
 					if self.sqlurl.startswith('sqlite'):
 						print 'Multiple threads are not supported with sqlite, forcing a single thread'
 						print 'Please note the server performance will not be optimal'
