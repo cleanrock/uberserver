@@ -260,7 +260,8 @@ class UsersHandler:
         session = self.sessionmaker()
         name = username.lower()
         entry = session.query(User).filter(User.lowername==name).first()
-        if not entry.logins[-1].end: entry.logins[-1].end = int(time.time()*1000)
+        # entry may not exist, e.g. at rename
+        if entry and not entry.logins[-1].end: entry.logins[-1].end = int(time.time()*1000)
         session.commit()
         session.close()
 
