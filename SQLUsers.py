@@ -196,7 +196,7 @@ class UsersHandler:
     def __init__(self, root, engine):
         self._root = root
         metadata.create_all(engine)
-        self.sessionmaker = sessionmaker(bind=engine, autoflush=True)
+        self.sessionmaker = sessionmaker(bind=engine, autoflush=True, expire_on_commit=False)
     
     def clientFromID(self, db_id):
         session = self.sessionmaker()
@@ -233,7 +233,7 @@ class UsersHandler:
         good = True
         now = int(time.time()*1000)
         entry = session.query(User).filter(User.lowername==name).first() # should only ever be one user with each name so we can just grab the first one :)
-        reason = copy.deepcopy(entry) # if not copying returned reason(entry) is not valid after close below
+        reason = entry
         if not entry:
             return False, 'No user named %s'%user
         if not password == entry.password:
